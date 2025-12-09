@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
+if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "Vcpkg toolchain file")
+endif()
+
 project(scrum_board VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
@@ -108,4 +113,5 @@ endif()
 
 # Makefile будет автоматически сгенерирован CMake
 # Для сборки: mkdir build && cd build && cmake .. && make
+
 # Для тестов: make test или ./scrum_board_tests
