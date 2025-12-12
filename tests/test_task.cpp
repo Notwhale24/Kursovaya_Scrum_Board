@@ -1,11 +1,10 @@
-#include <gtest/gtest.h>
+#include <gtest/gtest.h> // Подключаем библиотеку Google Test
 #include "../models/task.h"
 
 class TaskTest : public ::testing::Test {
 protected:
-    void SetUp() override {
-        // Сброс счетчика перед каждым тестом не делаем,
-        // так как он статический
+    void SetUp() override { // Вызывается перед каждым тестом
+        // Сброс счетчика перед каждым тестом не делаем, т.к. он статистический
     }
 };
 
@@ -51,7 +50,7 @@ TEST_F(TaskTest, ChangeStatus) {
     EXPECT_EQ(task.getStatus(), TaskStatus::Done);
 }
 
-TEST_F(TaskTest, StatusConversion) {
+TEST_F(TaskTest, StatusConversion) { // Проверка конвертации статусов в строки и обратно
     EXPECT_EQ(Task::statusToString(TaskStatus::Backlog), "Backlog");
     EXPECT_EQ(Task::statusToString(TaskStatus::Assigned), "Assigned");
     EXPECT_EQ(Task::statusToString(TaskStatus::InProgress), "InProgress");
@@ -65,7 +64,7 @@ TEST_F(TaskTest, StatusConversion) {
     EXPECT_EQ(Task::stringToStatus("Done"), TaskStatus::Done);
 }
 
-TEST_F(TaskTest, JsonSerialization) {
+TEST_F(TaskTest, JsonSerialization) { // Проверка JSON сериализации/десериализации
     Task task("Задача", "Описание");
     task.assignToDeveloper(5);
     task.setStatus(TaskStatus::InProgress);
@@ -79,7 +78,7 @@ TEST_F(TaskTest, JsonSerialization) {
     EXPECT_EQ(loaded.getAssignedDeveloperId(), task.getAssignedDeveloperId());
 }
 
-// ========== DEADLINE TESTS ==========
+// ========== ТЕСТЫ ДЛЯ ДЕДЛАЙНОВ ==========
 
 TEST_F(TaskTest, DeadlineManagement) {
     Task task("Задача с дедлайном");
@@ -142,7 +141,7 @@ TEST_F(TaskTest, IsOverdue) {
     EXPECT_TRUE(task.isOverdue());
 }
 
-TEST_F(TaskTest, DeadlineEdgeCases) {
+TEST_F(TaskTest, DeadlineEdgeCases) { // Граничные случаи дедлайнов
     Task task("Задача");
 
     // Дедлайн ровно сейчас (граница)
@@ -158,13 +157,13 @@ TEST_F(TaskTest, DeadlineEdgeCases) {
     EXPECT_TRUE(days >= 0 && days <= 1);
 }
 
-// ========== HISTORY TESTS ==========
+// ========== ТЕСТЫ ИСТОРИИ ИЗМЕНЕНИЙ ==========
 
 TEST_F(TaskTest, HistoryTracking) {
     Task task("Новая задача");
 
     // При создании должна быть одна запись в истории
-    QList<TaskHistoryEntry> history = task.getHistory();
+    QList<TaskHistoryEntry> history = task.getHistory(); // Получаем список записей истории изменений задачи
     EXPECT_GE(history.size(), 1);
 
     // Проверяем первую запись (создание)
@@ -175,11 +174,11 @@ TEST_F(TaskTest, HistoryTracking) {
 
 TEST_F(TaskTest, HistoryOnTitleChange) {
     Task task("Старое название");
-    int initialSize = task.getHistory().size();
+    int initialSize = task.getHistory().size(); // Сохраняем начальный размер истории
 
     task.setTitle("Новое название");
 
-    QList<TaskHistoryEntry> history = task.getHistory();
+    QList<TaskHistoryEntry> history = task.getHistory(); 
     EXPECT_EQ(history.size(), initialSize + 1);
 
     TaskHistoryEntry lastEntry = history.last();
@@ -246,7 +245,7 @@ TEST_F(TaskTest, HistoryOnDeadlineChange) {
     EXPECT_TRUE(lastEntry.details.contains("дедлайн"));
 }
 
-TEST_F(TaskTest, HistoryNoChangeNoDuplicate) {
+TEST_F(TaskTest, HistoryNoChangeNoDuplicate) { // Одинаковые изменения не создают дубликатов в истории
     Task task("Задача");
     task.setStatus(TaskStatus::InProgress);
     int sizeAfterFirstChange = task.getHistory().size();
@@ -257,7 +256,7 @@ TEST_F(TaskTest, HistoryNoChangeNoDuplicate) {
     EXPECT_EQ(task.getHistory().size(), sizeAfterFirstChange);
 }
 
-// ========== JSON SERIALIZATION WITH DEADLINE AND HISTORY ==========
+// ========== JSON СЕРИАЛИЗАЦИЯ С ДЕДЛАЙНАМИ И ИСТОРИЕЙ ==========
 
 TEST_F(TaskTest, JsonSerializationWithDeadline) {
     Task task("Задача с дедлайном", "Описание");
@@ -273,7 +272,7 @@ TEST_F(TaskTest, JsonSerializationWithDeadline) {
     EXPECT_EQ(loaded.getStatus(), task.getStatus());
     EXPECT_TRUE(loaded.hasDeadline());
 
-    // С��авнение времени с точностью до секунды (избегаем проблем с миллисекундами)
+    // Сравнение времени с точностью до секунды (избегаем проблем с миллисекундами/ISO)
     EXPECT_EQ(loaded.getDeadline().toString(Qt::ISODate),
               task.getDeadline().toString(Qt::ISODate));
 }

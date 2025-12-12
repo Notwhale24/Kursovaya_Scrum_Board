@@ -7,8 +7,8 @@ Task::Task()
     : id(nextId++),
     title(""),
     description(""),
-    status(TaskStatus::Backlog),
-    assignedDeveloperId(-1) {
+    status(TaskStatus::Backlog), //Начальный статус - Backlog
+    assignedDeveloperId(-1) { //задача не назначена
     addHistoryEntry("Создание", "Задача создана");
 }
 
@@ -59,7 +59,7 @@ void Task::unassign() {
 
 void Task::setDeadline(const QDateTime& newDeadline) {
     if (deadline != newDeadline) {
-        QString details = newDeadline.isValid()
+        QString details = newDeadline.isValid() //isValid() для проверки корректности даты
         ? QString("Установлен дедлайн: %1").arg(newDeadline.toString("dd.MM.yyyy"))
         : "Дедлайн удален";
         addHistoryEntry("Изменение дедлайна", details);
@@ -74,7 +74,7 @@ int Task::daysUntilDeadline() const {
 
 bool Task::isOverdue() const {
     if (!deadline.isValid()) return false;
-    return QDateTime::currentDateTime() > deadline && status != TaskStatus::Done;
+    return QDateTime::currentDateTime() > deadline && status != TaskStatus::Done; //Возвращает true если: Дедлайн установлен, текущее время позже дедлайна, задача не в статусе Done
 }
 
 void Task::addHistoryEntry(const QString& action, const QString& details) {
@@ -83,16 +83,16 @@ void Task::addHistoryEntry(const QString& action, const QString& details) {
     entry.action = action;
     entry.details = details;
     history.append(entry);
-}
+} 
 
 QJsonObject Task::toJson() const {
-    QJsonObject json;
+    QJsonObject json; //Создает JSON-объект со всеми данными задачи
     json["id"] = id;
     json["title"] = title;
     json["description"] = description;
     json["status"] = statusToString(status);
     json["assignedDeveloperId"] = assignedDeveloperId;
-    json["deadline"] = deadline.isValid() ? deadline.toString(Qt::ISODate) : "";
+    json["deadline"] = deadline.isValid() ? deadline.toString(Qt::ISODate) : ""; //стандарт ISO для дат
 
     QJsonArray historyArray;
     for (const TaskHistoryEntry& entry : history) {
@@ -100,48 +100,48 @@ QJsonObject Task::toJson() const {
     }
     json["history"] = historyArray;
 
-    return json;
+    return json; //Сохраняет всю историю как массив JSON-объектов
 }
 
 Task Task::fromJson(const QJsonObject& json) {
-    Task task;
+    Task task; // Создает временный объект Task с помощью конструктора 
     task.id = json["id"].toInt();
     task.title = json["title"].toString();
     task.description = json["description"].toString();
     task.status = stringToStatus(json["status"].toString());
     task.assignedDeveloperId = json["assignedDeveloperId"].toInt();
 
-    QString deadlineStr = json["deadline"].toString();
+    QString deadlineStr = json["deadline"].toString(); //Обрабатывает дедлайн (пустая строка = нет дедлайна)
     if (!deadlineStr.isEmpty()) {
         task.deadline = QDateTime::fromString(deadlineStr, Qt::ISODate);
     }
 
     task.history.clear();
-    QJsonArray historyArray = json["history"].toArray();
+    QJsonArray historyArray = json["history"].toArray(); //Восстанавливает историю из JSON-массива
     for (const QJsonValue& value : historyArray) {
         task.history.append(TaskHistoryEntry::fromJson(value.toObject()));
     }
 
-    if (task.id >= nextId) {
-        nextId = task.id + 1;
+    if (task.id >= nextId) { 
+        nextId = task.id + 1; //Обновляет статический nextId если загруженный ID больше текущего
     }
 
     return task;
 }
 
-QString Task::statusToString(TaskStatus status) {
-    switch (status) {
+QString Task::statusToString(TaskStatus status) { //TaskStatus (enum class) автоматически конвертируется в int
+    switch (status) { //switch - работает только с целыми типами (int, char, enum)
     case TaskStatus::Backlog:    return "Backlog";
     case TaskStatus::Assigned:   return "Assigned";
     case TaskStatus::InProgress: return "InProgress";
     case TaskStatus::Review:     return "Review";
     case TaskStatus::Done:       return "Done";
-    default:                     return "Backlog";
+    default:                     return "Backlog"; // Защита от некорректных значений
     }
 }
 
-TaskStatus Task::stringToStatus(const QString& str) {
-    if (str == "Backlog")    return TaskStatus::Backlog;
+TaskStatus Task::stringToStatus(const QString& str) { //QString (объект строки)
+    if (str == "Backlog")    return TaskStatus::Backlog; // цепочка if - строки нельзя использовать в switch
     if (str == "Assigned")   return TaskStatus::Assigned;
     if (str == "InProgress") return TaskStatus::InProgress;
     if (str == "Review")     return TaskStatus::Review;
@@ -149,19 +149,19 @@ TaskStatus Task::stringToStatus(const QString& str) {
     return TaskStatus::Backlog;
 }
 
-// TaskHistoryEntry implementation
+// Сериализация объекта TaskHistoryEntry в формат JSON
 QJsonObject TaskHistoryEntry::toJson() const {
-    QJsonObject json;
+    QJsonObject json; // Создаем пустой JSON-объект
     json["timestamp"] = timestamp.toString(Qt::ISODate);
     json["action"] = action;
     json["details"] = details;
-    return json;
+    return json; // Возвращаем заполненный JSON-объект
 }
-
+// Десериализация JSON-объекта обратно в объект TaskHistoryEntry
 TaskHistoryEntry TaskHistoryEntry::fromJson(const QJsonObject& json) {
-    TaskHistoryEntry entry;
-    entry.timestamp = QDateTime::fromString(json["timestamp"].toString(), Qt::ISODate);
-    entry.action = json["action"].toString();
+    TaskHistoryEntry entry; // Создаем новый объект записи истории
+    entry.timestamp = QDateTime::fromString(json["timestamp"].toString(), Qt::ISODate); //Все поля сохраняются как строки
+    entry.action = json["action"].toString(); 
     entry.details = json["details"].toString();
-    return entry;
+    return entry; // Возвращаем восстановленный объект записи истории
 }

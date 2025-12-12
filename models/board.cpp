@@ -1,13 +1,13 @@
 #include "board.h"
-#include <QFile>
-#include <QJsonArray>
-#include <QJsonDocument>
-
+#include <QFile> // Для работы с файлами (сохранение/загрузка)
+#include <QJsonArray> // Для работы с JSON массивами
+#include <QJsonDocument> // Для работы с JSON документами
+ 
 Board::Board() {
 }
 
-void Board::addDeveloper(const Developer& developer) {
-    developers.append(developer);
+void Board::addDeveloper(const Developer& developer) {  // developer передается по константной ссылке для избежания копирования
+    developers.append(developer); // Добавляем копию разработчика в список
 }
 
 bool Board::removeDeveloper(int developerId) {
@@ -16,23 +16,24 @@ bool Board::removeDeveloper(int developerId) {
             // Снимаем назначение со всех задач этого разработчика
             for (Task& task : tasks) {
                 if (task.getAssignedDeveloperId() == developerId) {
-                    task.unassign();
+                    task.unassign();  // Снимаем назначение с задачи
                 }
             }
             developers.removeAt(i);
             return true;
         }
     }
-    return false;
+    return false; // Разработчик с таким ID не найден
 }
 
+// Получение разработчика по ID
 Developer* Board::getDeveloper(int developerId) {
     for (Developer& dev : developers) {
         if (dev.getId() == developerId) {
             return &dev;
         }
     }
-    return nullptr;
+    return nullptr; // Если не нашли - возвращаем нулевой указатель
 }
 
 void Board::addTask(const Task& task) {
@@ -55,22 +56,23 @@ Task* Board::getTask(int taskId) {
             return &task;
         }
     }
-    return nullptr;
+    return nullptr;  // Задача не найдена
 }
 
 QList<Task*> Board::getTasksByStatus(TaskStatus status) {
-    QList<Task*> result;
+    QList<Task*> result;  // Создаем список указателей на задачи
     for (Task& task : tasks) {
         if (task.getStatus() == status) {
-            result.append(&task);
+            result.append(&task); // Добавляем указатель на задачу в результат
         }
     }
-    return result;
+    return result;  // Возвращаем список
 }
 
 QList<Task*> Board::getTasksByDeveloper(int developerId) {
     QList<Task*> result;
-    for (Task& task : tasks) {
+    for (Task& task : tasks) {         
+        // Проверяем, назначена ли задача данному разработчику
         if (task.getAssignedDeveloperId() == developerId) {
             result.append(&task);
         }
@@ -80,11 +82,15 @@ QList<Task*> Board::getTasksByDeveloper(int developerId) {
 
 bool Board::hasUnassignedTasks() const {
     for (const Task& task : tasks) {
+                // Проверяем два условия:
+        // 1. Задача не назначена (isAssigned() возвращает false)
+        // 2. Задача НЕ находится в бэклоге
+        // (логика: задачи в бэклоге еще не готовы к назначению)
         if (!task.isAssigned() && task.getStatus() != TaskStatus::Backlog) {
-            return true;
+            return true; // Нашли неназначенную задачу
         }
     }
-    return false;
+    return false;  // Все задачи либо назначены, либо в бэклоге
 }
 
 void Board::clear() {
@@ -93,14 +99,14 @@ void Board::clear() {
 }
 
 QJsonObject Board::toJson() const {
-    QJsonObject json;
+    QJsonObject json; // Создаем пустой JSON объект
 
     // Сохраняем разработчиков
     QJsonArray devsArray;
     for (const Developer& dev : developers) {
-        devsArray.append(dev.toJson());
+        devsArray.append(dev.toJson()); // Каждый разработчик должен иметь метод toJson()
     }
-    json["developers"] = devsArray;
+    json["developers"] = devsArray;  // Добавляем массив в JSON
 
     // Сохраняем задачи
     QJsonArray tasksArray;
@@ -117,7 +123,7 @@ void Board::fromJson(const QJsonObject& json) {
 
     // Загружаем разработчиков
     QJsonArray devsArray = json["developers"].toArray();
-    for (const QJsonValue& value : devsArray) {
+    for (const QJsonValue& value : devsArray) {         // Developer должен иметь статический метод fromJson
         developers.append(Developer::fromJson(value.toObject()));
     }
 
@@ -129,11 +135,12 @@ void Board::fromJson(const QJsonObject& json) {
 }
 
 bool Board::saveToFile(const QString& filename) const {
-    QFile file(filename);
+    QFile file(filename); // Создаем объект файла
+    // Открываем файл для записи
     if (!file.open(QIODevice::WriteOnly)) {
         return false;
     }
-
+    // Создаем JSON документ из нашего объекта
     QJsonDocument doc(toJson());
     file.write(doc.toJson());
     file.close();
@@ -146,10 +153,11 @@ bool Board::loadFromFile(const QString& filename) {
         return false;
     }
 
-    QByteArray data = file.readAll();
-    file.close();
+    QByteArray data = file.readAll();     // Читаем все содержимое файла
+    file.close(); // Закрываем файл сразу после чтения
 
     QJsonDocument doc = QJsonDocument::fromJson(data);
+    // Проверяем, что документ валиден и является объектом
     if (doc.isNull() || !doc.isObject()) {
         return false;
     }

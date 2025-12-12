@@ -40,25 +40,25 @@ public:
     QList<TaskHistoryEntry> getHistory() const { return history; }
 
     // Сеттеры
-    void setTitle(const QString& newTitle);
+    void setTitle(const QString& newTitle); // Изменить заголовок
     void setDescription(const QString& newDescription);
     void setStatus(TaskStatus newStatus);
-    void assignToDeveloper(int developerId);
-    void unassign();
+    void assignToDeveloper(int developerId); // Назначить разработчику
+    void unassign(); // Снять назначение
     void setDeadline(const QDateTime& newDeadline);
 
     // Проверка назначения и дедлайна
     bool isAssigned() const { return assignedDeveloperId != -1; }
     bool hasDeadline() const { return deadline.isValid(); }
     int daysUntilDeadline() const;
-    bool isOverdue() const;
+    bool isOverdue() const; // Просрочена ли задача?
 
     // История
-    void addHistoryEntry(const QString& action, const QString& details);
+    void addHistoryEntry(const QString& action, const QString& details); // Добавить запись в историю
 
     // Сериализация
-    QJsonObject toJson() const;
-    static Task fromJson(const QJsonObject& json);
+    QJsonObject toJson() const; // Конвертировать задачу в JSON
+    static Task fromJson(const QJsonObject& json);// Создать задачу из JSON
 
     // Конвертация статуса в строку и обратно
     static QString statusToString(TaskStatus status);

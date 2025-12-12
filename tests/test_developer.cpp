@@ -1,4 +1,4 @@
-#include <gtest/gtest.h>
+#include <gtest/gtest.h> // Подключаем библиотеку Google Test
 #include "../models/developer.h"
 
 class DeveloperTest : public ::testing::Test {
@@ -22,6 +22,7 @@ TEST_F(DeveloperTest, ModifyDeveloper) {
     EXPECT_EQ(dev.getPosition(), "Middle Developer");
 }
 
+// Тест для проверки сериализации в JSON и обратной десериализации
 TEST_F(DeveloperTest, JsonSerialization) {
     Developer dev("Анна", "QA Engineer");
 
@@ -32,7 +33,7 @@ TEST_F(DeveloperTest, JsonSerialization) {
     EXPECT_EQ(loaded.getPosition(), dev.getPosition());
 }
 
-// ========== EDGE CASES ==========
+// ========== КРАЙНИЕ СЛУЧАИ ==========
 
 TEST_F(DeveloperTest, EmptyName) {
     Developer dev("", "Developer");
@@ -76,7 +77,7 @@ TEST_F(DeveloperTest, BothEmpty) {
     EXPECT_TRUE(loaded.getPosition().isEmpty());
 }
 
-TEST_F(DeveloperTest, SpecialCharacters) {
+TEST_F(DeveloperTest, SpecialCharacters) { // Спец символы
     Developer dev("Иван О'Коннор", "C++ / Qt Developer (Senior)");
 
     EXPECT_EQ(dev.getName(), "Иван О'Коннор");
@@ -90,7 +91,7 @@ TEST_F(DeveloperTest, SpecialCharacters) {
     EXPECT_EQ(loaded.getPosition(), "C++ / Qt Developer (Senior)");
 }
 
-TEST_F(DeveloperTest, UnicodeCharacters) {
+TEST_F(DeveloperTest, UnicodeCharacters) { // Иероглифы
     Developer dev("张伟", "开发者");
 
     EXPECT_EQ(dev.getName(), "张伟");
@@ -140,7 +141,7 @@ TEST_F(DeveloperTest, MultipleChanges) {
     EXPECT_EQ(loaded.getPosition(), "Финальная позиция");
 }
 
-TEST_F(DeveloperTest, IdPersistence) {
+TEST_F(DeveloperTest, IdPersistence) { // Постоянство и уникальность ID разработчика
     Developer dev1("Dev 1", "Position 1");
     Developer dev2("Dev 2", "Position 2");
 

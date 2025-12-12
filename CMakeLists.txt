@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 
+if(DEFINED ENV{VCPKG_ROOT} AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
+    set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        CACHE STRING "Vcpkg toolchain file")
+endif()
+
 project(scrum_board VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_AUTOUIC ON)
@@ -55,17 +60,6 @@ endif()
 
 target_link_libraries(scrum_board PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
 
-# Исправление для macOS 15+ (удаление устаревшего AGL framework)
-if(APPLE)
-    add_custom_command(TARGET scrum_board PRE_LINK
-        COMMAND ${CMAKE_COMMAND}
-        -DTARGET_NAME=scrum_board
-        -DCMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-        -P ${CMAKE_CURRENT_SOURCE_DIR}/remove_agl.cmake
-        COMMENT "Removing AGL framework references from link command"
-    )
-endif()
-
 # Настройки для macOS и Windows
 if(${QT_VERSION} VERSION_LESS 6.1.0)
   set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.scrum_board)
@@ -113,17 +107,6 @@ if(BUILD_TESTS)
         GTest::Main
         Qt${QT_VERSION_MAJOR}::Widgets
     )
-
-    # Исправление для macOS 15+ (удаление устаревшего AGL framework)
-    if(APPLE)
-        add_custom_command(TARGET scrum_board_tests PRE_LINK
-            COMMAND ${CMAKE_COMMAND}
-            -DTARGET_NAME=scrum_board_tests
-            -DCMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-            -P ${CMAKE_CURRENT_SOURCE_DIR}/remove_agl.cmake
-            COMMENT "Removing AGL framework references from test link command"
-        )
-    endif()
 
     add_test(NAME scrum_board_tests COMMAND scrum_board_tests)
 endif()

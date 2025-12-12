@@ -1,13 +1,11 @@
-#include <gtest/gtest.h>
+#include <gtest/gtest.h> // Подключаем библиотеку Google Test
 #include "../models/task.h"
-
-// ========== TaskHistoryEntry TESTS ==========
 
 class TaskHistoryEntryTest : public ::testing::Test {
 };
 
-TEST_F(TaskHistoryEntryTest, CreateEntry) {
-    TaskHistoryEntry entry;
+TEST_F(TaskHistoryEntryTest, CreateEntry) { // Создание записи истории
+    TaskHistoryEntry entry; // Создаем объект записи истории
     entry.timestamp = QDateTime::currentDateTime();
     entry.action = "Тестовое действие";
     entry.details = "Детали действия";
@@ -17,7 +15,7 @@ TEST_F(TaskHistoryEntryTest, CreateEntry) {
     EXPECT_EQ(entry.details, "Детали действия");
 }
 
-TEST_F(TaskHistoryEntryTest, JsonSerialization) {
+TEST_F(TaskHistoryEntryTest, JsonSerialization) { // Сериализация и десериализация в/из JSON
     TaskHistoryEntry entry;
     entry.timestamp = QDateTime::currentDateTime();
     entry.action = "Создание задачи";
@@ -87,7 +85,7 @@ TEST_F(TaskHistoryEntryTest, LongDetails) {
 
 TEST_F(TaskHistoryEntryTest, InvalidTimestamp) {
     TaskHistoryEntry entry;
-    entry.timestamp = QDateTime(); // Невалидный timestamp
+    entry.timestamp = QDateTime(); // Невалидный временная метка
     entry.action = "Действие";
     entry.details = "Детали";
 
@@ -100,7 +98,7 @@ TEST_F(TaskHistoryEntryTest, InvalidTimestamp) {
     EXPECT_EQ(loaded.details, "Детали");
 }
 
-TEST_F(TaskHistoryEntryTest, MultilineDetails) {
+TEST_F(TaskHistoryEntryTest, MultilineDetails) { // Многострочные детали
     TaskHistoryEntry entry;
     entry.timestamp = QDateTime::currentDateTime();
     entry.action = "Обновление";
@@ -112,7 +110,7 @@ TEST_F(TaskHistoryEntryTest, MultilineDetails) {
     EXPECT_EQ(loaded.details, "Строка 1\nСтрока 2\nСтрока 3");
 }
 
-TEST_F(TaskHistoryEntryTest, FutureTimestamp) {
+TEST_F(TaskHistoryEntryTest, FutureTimestamp) { // Будущая временная метка
     TaskHistoryEntry entry;
     entry.timestamp = QDateTime::currentDateTime().addYears(10);
     entry.action = "Будущее действие";
@@ -138,7 +136,7 @@ TEST_F(TaskHistoryEntryTest, PastTimestamp) {
     EXPECT_EQ(loaded.details, "Произошло 10 лет назад");
 }
 
-// ========== INTEGRATION WITH TASK ==========
+// ========== ИНТЕГРАЦИЯ С ЗАДАЧЕЙ ==========
 
 TEST_F(TaskHistoryEntryTest, IntegrationWithTask) {
     Task task("Задача с историей");

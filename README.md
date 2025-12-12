@@ -572,7 +572,7 @@ scrum_board/
 
 ## 👨‍💻 Контакты
 
-GitHub: [https://github.com/Notwhale24/Kursovaya_Scrum_Board](https://github.com/Notwhale24/Kursovaya_Scrum_Board)
+GitHub: [https://github.com/xloned/scrum_board](https://github.com/xloned/scrum_board)
 
 ---
 
