@@ -1,8 +1,8 @@
 #ifndef BOARD_H
 #define BOARD_H
 
-#include <QList>
-#include <QString>
+#include <QList>  // Qt контейнер для хранения списков объектов
+#include <QString> // Qt строковый класс (Юникод, безопасный)
 #include <QJsonDocument>
 #include "task.h"
 #include "developer.h"
@@ -14,9 +14,9 @@ public:
     // Управление разработчиками
     void addDeveloper(const Developer& developer);
     bool removeDeveloper(int developerId);
-    Developer* getDeveloper(int developerId);
-    QList<Developer>& getDevelopers() { return developers; }
-    const QList<Developer>& getDevelopers() const { return developers; }
+    Developer* getDeveloper(int developerId); // Получение разработчика по ID
+    QList<Developer>& getDevelopers() { return developers; } // Возвращает ссылку на список (позволяет модифицировать)
+    const QList<Developer>& getDevelopers() const { return developers; } // Возвращает константную ссылку (только для чтения)
 
     // Управление задачами
     void addTask(const Task& task);
@@ -42,11 +42,11 @@ public:
     void clear();
 
 private:
-    QList<Developer> developers;
+    QList<Developer> developers; // Список всех разработчиков
     QList<Task> tasks;
 
-    QJsonObject toJson() const;
-    void fromJson(const QJsonObject& json);
+    QJsonObject toJson() const; //Создает JSON представление объекта
+    void fromJson(const QJsonObject& json); // Восстанавливает объект из JSON
 };
 
 #endif // BOARD_H

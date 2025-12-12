@@ -1,39 +1,40 @@
-#include "mainwindow.h"
-#include "./ui_mainwindow.h"
-#include "widgets/taskcard.h"
-#include <QHBoxLayout>
-#include <QVBoxLayout>
-#include <QMenuBar>
-#include <QMenu>
-#include <QAction>
-#include <QToolBar>
-#include <QFileDialog>
-#include <QInputDialog>
-#include <QMessageBox>
-#include <QListWidget>
-#include <QDialog>
-#include <QDialogButtonBox>
-#include <QFormLayout>
-#include <QLineEdit>
-#include <QTextEdit>
-#include <QComboBox>
-#include <QDateEdit>
-#include <QCheckBox>
-#include <QDebug>
-#include <QTextCursor>
+#include "mainwindow.h"               
+#include "./ui_mainwindow.h"            
+#include "widgets/taskcard.h"           
+#include <QHBoxLayout>                 
+#include <QVBoxLayout>                
+#include <QMenuBar>                  
+#include <QMenu>                  
+#include <QAction>                      
+#include <QToolBar>                     
+#include <QFileDialog>              
+#include <QInputDialog>                
+#include <QMessageBox>               
+#include <QListWidget>               
+#include <QDialog>                  
+#include <QDialogButtonBox>           
+#include <QFormLayout>                 
+#include <QLineEdit>                   
+#include <QTextEdit>                   
+#include <QComboBox>                  
+#include <QDateEdit>                   
+#include <QCheckBox>                  
+#include <QDebug>                     
+#include <QTextCursor>              
 
+// Конструктор главного окна приложения
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    , ui(new Ui::MainWindow) {
+    , ui(new Ui::MainWindow) { // Инициализация пользовательского интерфейса
     ui->setupUi(this);
     setupUI();
     setupMenuBar();
     setupToolBar();
     setWindowTitle("Скрам Доска");
-    // resize(1400, 800); // Убрали - окно будет масштабироваться на весь экран
     updateStatistics();
 }
 
+// Деструктор главного окна
 MainWindow::~MainWindow() {
     delete ui;
 }
@@ -45,14 +46,14 @@ void MainWindow::setupUI() {
     // Устанавливаем современный градиентный фон (как на стартовом экране)
     centralWidget->setStyleSheet(
         "QWidget {"
-        "   background: qlineargradient(x1:0, y1:0, x2:1, y2:1, "
+        "   background: qlineargradient(x1:0, y1:0, x2:1, y2:1, " // Линейный градиент
         "       stop:0 #E3F2FD, "
         "       stop:0.5 #F5F5F5, "
         "       stop:1 #FFF8E1);"
         "}"
     );
 
-    QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);
+    QHBoxLayout* mainLayout = new QHBoxLayout(centralWidget);  // Основной горизонтальный компоновщик
     mainLayout->setSpacing(10);
     mainLayout->setContentsMargins(10, 10, 10, 10);
 
@@ -61,11 +62,13 @@ void MainWindow::setupUI() {
     columns[TaskStatus::InProgress] = new ColumnWidget("ДЕЛАТЬ", "#80CBC4", TaskStatus::InProgress, this);
     columns[TaskStatus::Review] = new ColumnWidget("ПРОВЕРКА", "#CE93D8", TaskStatus::Review, this);
     columns[TaskStatus::Done] = new ColumnWidget("СДЕЛАНО!", "#A5D6A7", TaskStatus::Done, this);
-
+    
+    // Подключение сигналов перетаскивания задач от каждой колонки
     for (ColumnWidget* column : columns) {
         connect(column, &ColumnWidget::taskDropped, this, &MainWindow::onTaskDropped);
     }
-
+    
+    // Добавление колонок в основной компоновщик в порядке слева направо
     mainLayout->addWidget(columns[TaskStatus::Backlog]);
     mainLayout->addWidget(columns[TaskStatus::Assigned]);
     mainLayout->addWidget(columns[TaskStatus::InProgress]);
@@ -75,13 +78,13 @@ void MainWindow::setupUI() {
 
 void MainWindow::setupMenuBar() {
     QMenuBar* menuBar = new QMenuBar(this);
-    setMenuBar(menuBar);
+    setMenuBar(menuBar);  // Установка панели меню в главное окно
 
     QMenu* boardMenu = menuBar->addMenu("Доска");
 
     QAction* newBoardAction = boardMenu->addAction("Новая доска");
-    newBoardAction->setShortcut(QKeySequence("Ctrl+N"));
-    connect(newBoardAction, &QAction::triggered, this, &MainWindow::onNewBoard);
+    newBoardAction->setShortcut(QKeySequence("Ctrl+N"));  // Горячая клавиша Ctrl+N
+    connect(newBoardAction, &QAction::triggered, this, &MainWindow::onNewBoard); // Подключение сигнала
 
     QAction* saveBoardAction = boardMenu->addAction("Сохранить");
     saveBoardAction->setShortcut(QKeySequence("Ctrl+S"));
@@ -122,19 +125,20 @@ void MainWindow::setupMenuBar() {
 
 void MainWindow::setupToolBar() {
     QToolBar* toolBar = new QToolBar("Панель инструментов", this);
-    toolBar->setMovable(false);
+    toolBar->setMovable(false); // Запрет перемещения панели
     addToolBar(Qt::TopToolBarArea, toolBar);
 
     QLabel* searchLabel = new QLabel(" 🔍 Поиск: ", this);
     toolBar->addWidget(searchLabel);
 
-    searchBox = new QLineEdit(this);
+    searchBox = new QLineEdit(this); // Создание поля ввода для поиска
     searchBox->setPlaceholderText("Введите название задачи...");
     searchBox->setMinimumWidth(200);
     connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
-    toolBar->addWidget(searchBox);
+    toolBar->addWidget(searchBox); // Добавление поля поиска на панель
 
-    toolBar->addSeparator();
+
+    toolBar->addSeparator(); // Добавление разделителя на панель инструментов
 
     statsLabel = new QLabel(this);
     statsLabel->setStyleSheet("padding: 5px; font-weight: bold;");
@@ -155,11 +159,12 @@ void MainWindow::refreshBoard() {
             qDebug() << "  Дней до дедлайна:" << task.daysUntilDeadline();
         }
 
+        // Пропуск задач, не соответствующих поисковому запросу
         if (!matchesSearch(&task)) {
             continue;
         }
 
-        TaskCard* card = new TaskCard(&task, &board, this);
+        TaskCard* card = new TaskCard(&task, &board, this); // Создание карточки для задачи
 
         connect(card, &TaskCard::editClicked, this, &MainWindow::onTaskEdit);
         connect(card, &TaskCard::deleteClicked, this, &MainWindow::onTaskDelete);
@@ -168,16 +173,17 @@ void MainWindow::refreshBoard() {
         columns[task.getStatus()]->addTaskCard(card);
     }
 
-    showWarningIfUnassigned();
+    showWarningIfUnassigned(); // Предупреждение о неназначеннных задачах
     updateStatistics();
 }
 
+// Проверка соответствия задачи поисковому запросу
 bool MainWindow::matchesSearch(Task* task) {
     if (searchFilter.isEmpty()) {
         return true;
     }
 
-    return task->getTitle().toLower().contains(searchFilter.toLower());
+    return task->getTitle().toLower().contains(searchFilter.toLower());     // Поиск по названию задачи (без учета регистра)
 }
 
 void MainWindow::onSearchTextChanged(const QString& text) {
@@ -186,6 +192,7 @@ void MainWindow::onSearchTextChanged(const QString& text) {
 }
 
 void MainWindow::updateStatistics() {
+    // Подсчет задач по статусам
     int backlog = board.getTasksByStatus(TaskStatus::Backlog).size();
     int assigned = board.getTasksByStatus(TaskStatus::Assigned).size();
     int inProgress = board.getTasksByStatus(TaskStatus::InProgress).size();
@@ -252,6 +259,7 @@ void MainWindow::onLoadBoard() {
     }
 }
 
+// Загрузка доски из указанного файла
 void MainWindow::loadBoard(const QString& filePath) {
     if (board.loadFromFile(filePath)) {
         searchBox->clear();
@@ -274,6 +282,7 @@ void MainWindow::onAddDeveloper() {
     layout->addRow("Имя:", nameEdit);
     layout->addRow("Должность:", positionEdit);
 
+    // Кнопки OK и Cancel
     QDialogButtonBox* buttons = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog
         );
@@ -282,6 +291,7 @@ void MainWindow::onAddDeveloper() {
     connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
 
+    // Если пользователь нажал OK
     if (dialog.exec() == QDialog::Accepted) {
         QString name = nameEdit->text().trimmed();
         QString position = positionEdit->text().trimmed();
@@ -306,25 +316,27 @@ void MainWindow::onManageDevelopers() {
 
     QListWidget* devList = new QListWidget(&dialog);
 
+    // Цикл перебора всех разработчиков из доски и отображение их в списке
     for (const Developer& dev : board.getDevelopers()) {
         QString text = QString("%1 - %2 (ID: %3)")
         .arg(dev.getName())
             .arg(dev.getPosition())
             .arg(dev.getId());
-        QListWidgetItem* item = new QListWidgetItem(text);
-        item->setData(Qt::UserRole, dev.getId());
+        QListWidgetItem* item = new QListWidgetItem(text); // Создание нового элемента списка (QListWidgetItem) с текстом
+        item->setData(Qt::UserRole, dev.getId()); // Qt::UserRole - специальное значение для хранения пользовательских данных
         devList->addItem(item);
     }
 
-    layout->addWidget(devList);
+    layout->addWidget(devList); // Добавление списка в компоновщик
 
     QPushButton* deleteBtn = new QPushButton("Удалить выбранного", &dialog);
     layout->addWidget(deleteBtn);
-
+    
+    // Обработчик нажатия кнопки удаления
     connect(deleteBtn, &QPushButton::clicked, [this, devList, &dialog]() {
-        QListWidgetItem* item = devList->currentItem();
+        QListWidgetItem* item = devList->currentItem(); // Получение выбранного элемента
         if (item) {
-            int devId = item->data(Qt::UserRole).toInt();
+            int devId = item->data(Qt::UserRole).toInt();  // Получение ID разработчика
 
             QMessageBox::StandardButton reply = QMessageBox::question(
                 this, "Удаление",
@@ -347,8 +359,9 @@ void MainWindow::onManageDevelopers() {
     dialog.exec();
 }
 
+// Слот для обработки перетаскивания задачи между колонками
 void MainWindow::onTaskDropped(int taskId, TaskStatus newStatus) {
-    Task* task = board.getTask(taskId);
+    Task* task = board.getTask(taskId); // Получение задачи по ID
     if (task && task->getStatus() != newStatus) {
         task->setStatus(newStatus);
         refreshBoard();
@@ -370,20 +383,21 @@ void MainWindow::onAddTask() {
     // Ограничение на 120 символов для описания
     connect(descEdit, &QTextEdit::textChanged, [descEdit]() {
         if (descEdit->toPlainText().length() > 120) {
-            descEdit->setPlainText(descEdit->toPlainText().left(120));
+            descEdit->setPlainText(descEdit->toPlainText().left(120)); // Обрезать до 120 символов
             QTextCursor cursor = descEdit->textCursor();
-            cursor.movePosition(QTextCursor::End);
+            cursor.movePosition(QTextCursor::End); // Переместить курсор в конец
             descEdit->setTextCursor(cursor);
         }
     });
 
     // Дедлайн
     QDateEdit* deadlineEdit = new QDateEdit(&dialog);
-    deadlineEdit->setCalendarPopup(true);
-    deadlineEdit->setDisplayFormat("dd.MM.yyyy");
-    deadlineEdit->setMinimumDate(QDate::currentDate());
-    deadlineEdit->setDate(QDate::currentDate().addDays(7));
+    deadlineEdit->setCalendarPopup(true);  // Всплывающий календарь
+    deadlineEdit->setDisplayFormat("dd.MM.yyyy");  // Формат даты
+    deadlineEdit->setMinimumDate(QDate::currentDate());  // Минимальная дата - сегодня
+    deadlineEdit->setDate(QDate::currentDate().addDays(7));  // Значение по умолчанию: через 7 дней
 
+     // Флажок для установки дедлайна
     QCheckBox* hasDeadlineCheck = new QCheckBox("Установить дедлайн", &dialog);
     hasDeadlineCheck->setChecked(false);
     deadlineEdit->setEnabled(false);
@@ -412,11 +426,11 @@ void MainWindow::onAddTask() {
             return;
         }
 
-        Task task(title, desc);
+        Task task(title, desc);  // Создание задачи
 
         // Устанавливаем дедлайн если выбран
         if (hasDeadlineCheck->isChecked()) {
-            QDateTime deadline(deadlineEdit->date(), QTime(23, 59, 59));
+            QDateTime deadline(deadlineEdit->date(), QTime(23, 59, 59)); // Дедлайн до конца дня
             task.setDeadline(deadline);
         }
 
@@ -449,31 +463,37 @@ void MainWindow::onTaskEdit(Task* task) {
             descEdit->setTextCursor(cursor);
         }
     });
-
+    // Выпадающий список для выбора разработчика
     QComboBox* devCombo = new QComboBox(&dialog);
     devCombo->addItem("Не назначена", -1);
-
+    
+    // board.getDevelopers() - метод, возвращающий контейнер разработчиков
     for (const Developer& dev : board.getDevelopers()) {
+        // Добавление элемента в выпадающий список
         devCombo->addItem(
-            QString("%1 (%2)").arg(dev.getName()).arg(dev.getPosition()),
-            dev.getId()
+            QString("%1 (%2)").arg(dev.getName()).arg(dev.getPosition()), // 1. Видимый текст для отображения пользователю
+            dev.getId()  // 2. Данные элемента (user data), связанные с этим пунктом списка
             );
     }
-
+    // Проверка, назначена ли задача какому-либо разработчику
     if (task->isAssigned()) {
         for (int i = 0; i < devCombo->count(); i++) {
-            if (devCombo->itemData(i).toInt() == task->getAssignedDeveloperId()) {
-                devCombo->setCurrentIndex(i);
+            // itemData(i) возвращает QVariant - универсальный тип данных Qt
+            // .toInt() преобразует QVariant в целое число (ID разработчика)
+            if (devCombo->itemData(i).toInt() == task->getAssignedDeveloperId()) {  
+                devCombo->setCurrentIndex(i); // Если ID совпадает - устанавливаем этот элемент как текущий выбранный
                 break;
             }
         }
     }
 
+    // Поле для дедлайна
     QDateEdit* deadlineEdit = new QDateEdit(&dialog);
     deadlineEdit->setCalendarPopup(true);
     deadlineEdit->setDisplayFormat("dd.MM.yyyy");
     deadlineEdit->setMinimumDate(QDate::currentDate());
 
+    // Установка текущего дедлайна задачи или значения по умолчанию
     if (task->hasDeadline()) {
         deadlineEdit->setDate(task->getDeadline().date());
     } else {
@@ -504,9 +524,9 @@ void MainWindow::onTaskEdit(Task* task) {
         task->setTitle(titleEdit->text().trimmed());
         task->setDescription(descEdit->toPlainText().trimmed());
 
-        int devId = devCombo->currentData().toInt();
+        int devId = devCombo->currentData().toInt();   // Назначение/снятие разработчик
         if (devId == -1) {
-            task->unassign();
+            task->unassign();  // Снять назначение
         } else {
             task->assignToDeveloper(devId);
         }
@@ -537,6 +557,7 @@ void MainWindow::onTaskDelete(Task* task) {
     }
 }
 
+// Слот для изменения статуса задачи (по нажатию кнопки на карточке)
 void MainWindow::onTaskStatusChange(Task* task) {
     if (!task) return;
 
@@ -609,11 +630,13 @@ void MainWindow::onShowStatistics() {
     layout->addWidget(doneLabel);
 
     layout->addSpacing(10);
+    
+    // Статистика по дедлайнам
+    int overdueCount = 0; // Просроченные задачи
+    int todayCount = 0;  // Дедлайн сегодня
+    int soonCount = 0; // Дедлайн в ближайшие 1-3 дня
 
-    int overdueCount = 0;
-    int todayCount = 0;
-    int soonCount = 0;
-
+    // Подсчет задач по срочности дедлайнов
     for (const Task& task : board.getTasks()) {
         if (task.hasDeadline() && task.getStatus() != TaskStatus::Done) {
             if (task.isOverdue()) {
@@ -664,6 +687,7 @@ void MainWindow::onShowStatistics() {
         QString("  Всего: %1").arg(board.getDevelopers().size()), &dialog);
     layout->addWidget(devCountLabel);
 
+    // Поиск разработчика с наибольшим количеством задач
     int maxTasks = 0;
     QString topDev = "—";
     for (const Developer& dev : board.getDevelopers()) {
@@ -674,6 +698,7 @@ void MainWindow::onShowStatistics() {
         }
     }
 
+    // Отображение разработчика с наибольшим количеством задач
     if (maxTasks > 0) {
         QLabel* topDevLabel = new QLabel(
             QString("  🏆 Больше всего задач: %1 (%2 задач)").arg(topDev).arg(maxTasks),
@@ -681,7 +706,7 @@ void MainWindow::onShowStatistics() {
         layout->addWidget(topDevLabel);
     }
 
-    layout->addStretch();
+    layout->addStretch();  // Добавление растягивающегося пространства
 
     QPushButton* closeBtn = new QPushButton("Закрыть", &dialog);
     connect(closeBtn, &QPushButton::clicked, &dialog, &QDialog::accept);

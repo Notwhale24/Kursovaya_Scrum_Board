@@ -1,12 +1,12 @@
 #include "mainwindow.h"
 #include "widgets/startscreen.h"
 
-#include <QApplication>
-#include <QStackedWidget>
+#include <QApplication> // Основной класс приложения Qt
+#include <QStackedWidget> // Виджет для переключения экранов
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
+    QApplication a(argc, argv); // Создаем объект приложения Qt
 
     // Создаем контейнер для переключения между экранами
     QStackedWidget* stackedWidget = new QStackedWidget();
@@ -22,15 +22,15 @@ int main(int argc, char *argv[])
     // Обработчик "Новая доска"
     QObject::connect(startScreen, &StartScreen::newBoardRequested, [&]() {
         if (!mainWindow) {
-            mainWindow = new MainWindow();
-            stackedWidget->addWidget(mainWindow);
+            mainWindow = new MainWindow(); // 1. Создаем главное окно
+            stackedWidget->addWidget(mainWindow); // 2. Добавляем его в стек
 
             // Обработчик возврата на стартовый экран
             QObject::connect(mainWindow, &MainWindow::backToStartScreen, [&]() {
-                stackedWidget->setCurrentWidget(startScreen);
+                stackedWidget->setCurrentWidget(startScreen);   // Возвращаемся на старт
             });
         }
-        stackedWidget->setCurrentWidget(mainWindow);
+        stackedWidget->setCurrentWidget(mainWindow); // 3. Показываем главное окно
     });
 
     // Обработчик "Загрузить доску"
@@ -44,16 +44,16 @@ int main(int argc, char *argv[])
                 stackedWidget->setCurrentWidget(startScreen);
             });
         }
-        mainWindow->loadBoard(filePath);
+        mainWindow->loadBoard(filePath); // Загружает сохраненную доску из файла
         stackedWidget->setCurrentWidget(mainWindow);
     });
 
     // Обработчик "Выйти"
     QObject::connect(startScreen, &StartScreen::exitRequested, [&]() {
-        a.quit();
+        a.quit(); // Завершаем приложение
     });
 
     stackedWidget->showMaximized(); // Показываем на весь экран
 
-    return a.exec();
+    return a.exec();  // Запускаем главный цикл обработки событий (клики мыши, нажатия клавиши, работает до закрытия окна)
 }

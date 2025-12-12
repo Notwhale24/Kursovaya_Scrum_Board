@@ -1,12 +1,13 @@
-#include <gtest/gtest.h>
+#include <gtest/gtest.h> // Подключаем библиотеку Google Test
 #include "../models/board.h"
-#include <QFile>
+#include <QFile> // Для работы с файлами
 
+// Класс BoardTest наследуется от testing::Test
 class BoardTest : public ::testing::Test {
 protected:
-    Board board;
+    Board board; // Экземпляр Board, создается заново для каждого теста
 
-    void TearDown() override {
+    void TearDown() override { //Для очистки
         QFile::remove("test_board.json");
     }
 };
@@ -15,8 +16,8 @@ TEST_F(BoardTest, AddDeveloper) {
     Developer dev("Тестовый разработчик", "Developer");
     board.addDeveloper(dev);
 
-    EXPECT_EQ(board.getDevelopers().size(), 1);
-    EXPECT_EQ(board.getDevelopers()[0].getName(), "Тестовый разработчик");
+    EXPECT_EQ(board.getDevelopers().size(), 1); // Проверяем, что разработчик добавлен
+    EXPECT_EQ(board.getDevelopers()[0].getName(), "Тестовый разработчик"); // Проверяем имя
 }
 
 TEST_F(BoardTest, RemoveDeveloper) {
@@ -27,7 +28,7 @@ TEST_F(BoardTest, RemoveDeveloper) {
     EXPECT_TRUE(board.removeDeveloper(devId));
     EXPECT_EQ(board.getDevelopers().size(), 0);
 
-    EXPECT_FALSE(board.removeDeveloper(999));
+    EXPECT_FALSE(board.removeDeveloper(999)); // Пытаемся удалить несуществующего
 }
 
 TEST_F(BoardTest, AddTask) {
@@ -62,9 +63,11 @@ TEST_F(BoardTest, GetTasksByStatus) {
     board.addTask(task2);
     board.addTask(task3);
 
+    // Получаем задачи со статусом Backlog
     QList<Task*> backlogTasks = board.getTasksByStatus(TaskStatus::Backlog);
     EXPECT_EQ(backlogTasks.size(), 1);
 
+    // Получаем задачи со статусом InProgress
     QList<Task*> inProgressTasks = board.getTasksByStatus(TaskStatus::InProgress);
     EXPECT_EQ(inProgressTasks.size(), 2);
 }
@@ -78,7 +81,7 @@ TEST_F(BoardTest, GetTasksByDeveloper) {
     Task task2("Задача 2");
     Task task3("Задача 3");
 
-    task1.assignToDeveloper(devId);
+    task1.assignToDeveloper(devId); // Назначаем задачи разработчику
     task2.assignToDeveloper(devId);
 
     board.addTask(task1);
@@ -89,6 +92,7 @@ TEST_F(BoardTest, GetTasksByDeveloper) {
     EXPECT_EQ(devTasks.size(), 2);
 }
 
+// Удаление разработчика снимает назначение с его задач
 TEST_F(BoardTest, RemoveDeveloperUnassignsTasks) {
     Developer dev("Разработчик", "Dev");
     board.addDeveloper(dev);
@@ -98,13 +102,14 @@ TEST_F(BoardTest, RemoveDeveloperUnassignsTasks) {
     task.assignToDeveloper(devId);
     board.addTask(task);
 
-    EXPECT_TRUE(board.getTasks()[0].isAssigned());
+    EXPECT_TRUE(board.getTasks()[0].isAssigned()); // Проверяем, что задача назначена
 
     board.removeDeveloper(devId);
 
-    EXPECT_FALSE(board.getTasks()[0].isAssigned());
+    EXPECT_FALSE(board.getTasks()[0].isAssigned()); // Задача должна стать неназначенной
 }
 
+// Проверка наличия неназначенных задач
 TEST_F(BoardTest, HasUnassignedTasks) {
     Task task1("Задача 1");
     task1.setStatus(TaskStatus::Assigned);
@@ -148,6 +153,7 @@ TEST_F(BoardTest, SaveAndLoad) {
     Board newBoard;
     EXPECT_TRUE(newBoard.loadFromFile("test_board.json"));
 
+    // Проверяем, что данные загрузились корректно
     EXPECT_EQ(newBoard.getDevelopers().size(), 1);
     EXPECT_EQ(newBoard.getDevelopers()[0].getName(), "Иван");
 
@@ -169,15 +175,15 @@ TEST_F(BoardTest, Clear) {
     EXPECT_EQ(board.getTasks().size(), 0);
 }
 
-// ========== SEARCH AND LOOKUP TESTS ==========
+// ========== ТЕСТЫ ПОИСКА И ПОЛУЧЕНИЯ ==========
 
 TEST_F(BoardTest, GetDeveloperById) {
     Developer dev("Тестовый разработчик", "Developer");
     board.addDeveloper(dev);
     int devId = board.getDevelopers()[0].getId();
 
-    Developer* found = board.getDeveloper(devId);
-    EXPECT_NE(found, nullptr);
+    Developer* found = board.getDeveloper(devId); // Ищем разработчика
+    EXPECT_NE(found, nullptr); // Проверяем, что указатель не нулевой
     EXPECT_EQ(found->getId(), devId);
     EXPECT_EQ(found->getName(), "Тестовый разработчик");
 
@@ -201,7 +207,7 @@ TEST_F(BoardTest, GetTaskById) {
     EXPECT_EQ(notFound, nullptr);
 }
 
-// ========== EDGE CASES ==========
+// ========== ТЕСТЫ КРАЙНИХ СЛУЧАЕВ ==========
 
 TEST_F(BoardTest, EmptyBoardBehavior) {
     // Пустая доска
@@ -254,9 +260,9 @@ TEST_F(BoardTest, SaveToInvalidPath) {
     EXPECT_FALSE(board.saveToFile("/nonexistent_directory_12345/test.json"));
 }
 
-TEST_F(BoardTest, MultipleTasksWithSameStatus) {
+TEST_F(BoardTest, MultipleTasksWithSameStatus) { // Множество задач с одинаковым статусом
     for (int i = 0; i < 10; i++) {
-        Task task(QString("Задача %1").arg(i));
+        Task task(QString("Задача %1").arg(i)); // Создаем задачу с именем "Задача 0", ...
         task.setStatus(TaskStatus::InProgress);
         board.addTask(task);
     }
@@ -282,7 +288,7 @@ TEST_F(BoardTest, RemoveNonexistentDeveloper) {
     EXPECT_FALSE(board.removeDeveloper(0));
 }
 
-// ========== STATISTICS AND COMPLEX SCENARIOS ==========
+// ========== ТЕСТЫ СТАТИСТИКИ И СЛОЖНЫХ СЦЕНАРИЕВ ==========
 
 TEST_F(BoardTest, TaskCountByStatus) {
     board.addTask(Task("Backlog 1"));

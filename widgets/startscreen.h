@@ -1,33 +1,34 @@
 #ifndef STARTSCREEN_H
 #define STARTSCREEN_H
 
-#include <QWidget>
+#include <QWidget> // Базовый класс для виджетов
 #include <QPushButton>
-#include <QVBoxLayout>
-#include <QLabel>
+#include <QVBoxLayout> // Вертикальное расположение элементов
+#include <QLabel> // Текстовая метка
 
 class StartScreen : public QWidget {
-    Q_OBJECT
+    Q_OBJECT // Макрос для сигналов/слотов Qt
 
 public:
-    explicit StartScreen(QWidget* parent = nullptr);
+// Конструктор класса
+    explicit StartScreen(QWidget* parent = nullptr);  // explicit запрещает неявное преобразование типов
 
-signals:
+signals: // Испускаются при наступлении события
     void newBoardRequested();
     void loadBoardRequested(const QString& filePath);
     void exitRequested();
 
-private slots:
+private slots: // Методы, которые реагируют на сигналы
     void onNewBoardClicked();
     void onBrowseClicked();
     void onExitClicked();
 
-private:
+private: // Доступны только внутри класса
     QPushButton* newBoardBtn;
     QPushButton* browseBtn;
     QPushButton* exitBtn;
 
-    void setupUI();
+    void setupUI();  // Создает кнопки, располагает их, устанавливает текст
     void openFileDialog();
     void styleButton(QPushButton* btn, const QString& color);
 };

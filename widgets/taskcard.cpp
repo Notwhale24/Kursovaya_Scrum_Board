@@ -1,32 +1,34 @@
 #include "taskcard.h"
 #include <QHBoxLayout>
-#include <QFont>
-#include <QMimeData>
-#include <QApplication>
+#include <QFont> // Работа со шрифтами
+#include <QMimeData> // Данные для drag-and-drop
+#include <QApplication> // Для определения дистанции начала перетаскивания
 #include <QDrag>
 #include <QRandomGenerator>
-#include <QDebug>
-#include <QPainterPath>
+#include <QDebug> // Отладочный вывод
+#include <QPainterPath> // Сложные пути для рисования
 
-TaskCard::TaskCard(Task* task, Board* board, QWidget* parent)
+TaskCard::TaskCard(Task* task, Board* board, QWidget* parent) // Конструктор карточки задачи
     : QWidget(parent), task(task), board(board), m_glowIntensity(0.0), particleIntensity(0), lastDaysUntilDeadline(999) {
 
     // КРИТИЧЕСКИ ВАЖНО для работы border-radius на QWidget!
     setAttribute(Qt::WA_StyledBackground, true);
 
+    // Создание анимации свечения
     glowAnimation = new QPropertyAnimation(this, "glowIntensity");
-    glowAnimation->setDuration(1500);
-    glowAnimation->setLoopCount(-1);
+    glowAnimation->setDuration(1500); // Длительность одного цикла: 1.5 секунды
+    glowAnimation->setLoopCount(-1); // Бесконечное повторение
     glowAnimation->setEasingCurve(QEasingCurve::InOutSine);
 
     particleTimer = new QTimer(this);
     connect(particleTimer, &QTimer::timeout, this, &TaskCard::updateParticles);
 
-    setupUI();
+    setupUI(); // Настройка интерфейса
     updateDisplay();
-    setAcceptDrops(false);
+    setAcceptDrops(false); // Карточка не принимает другие карточки
 }
 
+// Настройка пользовательского интерфейса карточки
 void TaskCard::setupUI() {
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(10, 10, 10, 10);
@@ -34,12 +36,12 @@ void TaskCard::setupUI() {
 
     // Название задачи
     titleLabel = new QLabel(this);
-    titleLabel->setAutoFillBackground(false);
+    titleLabel->setAutoFillBackground(false); // Прозрачный фон
     QFont titleFont;
     titleFont.setBold(true);
     titleFont.setPointSize(11);
     titleLabel->setFont(titleFont);
-    titleLabel->setWordWrap(true);
+    titleLabel->setWordWrap(true); // Перенос длинных названий на новую строку
     titleLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     mainLayout->addWidget(titleLabel);
 
@@ -65,17 +67,18 @@ void TaskCard::setupUI() {
     assignedLabel->setAutoFillBackground(false);
     assignedLabel->setAlignment(Qt::AlignLeft);
     QFont assignedFont;
-    assignedFont.setItalic(true);
+    assignedFont.setItalic(true); // Курсив для имени разработчика
     assignedLabel->setFont(assignedFont);
     mainLayout->addWidget(assignedLabel);
 
-    // Спейсер чтобы кнопки были внизу
+    // Спейсер чтобы кнопки были снизу карточки
     mainLayout->addStretch();
 
     // Кнопки
     QHBoxLayout* btnLayout = new QHBoxLayout();
     btnLayout->setSpacing(5);
 
+    // Кнопка изменения статуса
     statusBtn = new QPushButton(this);
     statusBtn->setStyleSheet("background-color: #4CAF50; color: white; border: none; padding: 5px;");
     connect(statusBtn, &QPushButton::clicked, this, [this]() {
@@ -83,6 +86,7 @@ void TaskCard::setupUI() {
     });
     btnLayout->addWidget(statusBtn);
 
+    // Кнопка редактирования
     editBtn = new QPushButton("✏️", this);
     editBtn->setMaximumWidth(30);
     connect(editBtn, &QPushButton::clicked, this, [this]() {
@@ -90,6 +94,7 @@ void TaskCard::setupUI() {
     });
     btnLayout->addWidget(editBtn);
 
+    // Кнопка удаления
     deleteBtn = new QPushButton("🗑️", this);
     deleteBtn->setMaximumWidth(30);
     deleteBtn->setStyleSheet("background-color: #f44336; color: white;");
@@ -98,7 +103,7 @@ void TaskCard::setupUI() {
     });
     btnLayout->addWidget(deleteBtn);
 
-    mainLayout->addLayout(btnLayout);
+    mainLayout->addLayout(btnLayout); // Добавление макета с кнопками в основной макет
 
     // Адаптивные размеры карточки
     setMinimumWidth(200);
@@ -108,13 +113,15 @@ void TaskCard::setupUI() {
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 }
 
+// Интенсивности свечения
 void TaskCard::setGlowIntensity(qreal intensity) {
     m_glowIntensity = intensity;
     updateCardColor();
 }
 
+// Обновление отображения всех данных карточки
 void TaskCard::updateDisplay() {
-    if (!task) return;
+    if (!task) return;  // Задача существует
 
     // Название задачи
     titleLabel->setText(task->getTitle());
@@ -163,6 +170,7 @@ void TaskCard::updateDisplay() {
         assignedLabel->show();
     }
 
+    // Кнопка статуса и цвет карточки
     statusBtn->setText(getStatusButtonText());
     updateCardColor();
 }
@@ -170,16 +178,18 @@ void TaskCard::updateDisplay() {
 void TaskCard::updateCardColor() {
     if (!task) return;
 
-    QString bgColor = "#FFF3E0"; // Персиковый/бежевый базовый цвет
+    QString bgColor = "#FFF3E0";
     QString textColor = "#333";
     QString borderColor = "#FFE0B2";
     int days = 999;
 
+    // Если есть дедлайн И задача не завершена - анализируем срочность
     if (task->hasDeadline() && task->getStatus() != TaskStatus::Done) {
         days = task->daysUntilDeadline();
-        int targetIntensity = 0;
+        int targetIntensity = 0; // Интенсивность эффектов (0-4)
 
         if (task->isOverdue()) {
+            // Уровень 4: просроченные задачи
             // Красноватый с градиентом
             int intensity = (int)(m_glowIntensity * 80);
             bgColor = QString("qlineargradient(x1:0, y1:0, x2:1, y2:1, "
@@ -195,6 +205,7 @@ void TaskCard::updateCardColor() {
             targetIntensity = 4;
 
         } else if (days == 0) {
+            // Уровень 3: дедлайн сегодня
             // Оранжевый
             int intensity = (int)(m_glowIntensity * 60);
             bgColor = QString("qlineargradient(x1:0, y1:0, x2:0, y2:1, "
@@ -208,6 +219,7 @@ void TaskCard::updateCardColor() {
             targetIntensity = 3;
 
         } else if (days == 1) {
+            // Уровень 2: дедлайн завтра
             // Светло-оранжевый
             int intensity = (int)(m_glowIntensity * 40);
             bgColor = QString("qlineargradient(x1:0, y1:0, x2:0, y2:1, "
@@ -221,6 +233,7 @@ void TaskCard::updateCardColor() {
             targetIntensity = 2;
 
         } else if (days <= 3) {
+            // Уровень 1: дедлайн через 2-3 дня
             // Желтоватый
             int intensity = (int)(m_glowIntensity * 30);
             bgColor = QString("rgb(255,%1,210)").arg(240 + intensity / 3);
@@ -230,6 +243,7 @@ void TaskCard::updateCardColor() {
             targetIntensity = 1;
 
         } else {
+            // Уровень 0: нет срочности
             // Персиковый базовый
             bgColor = "#FFF3E0";
             textColor = "#333";
@@ -238,11 +252,11 @@ void TaskCard::updateCardColor() {
             targetIntensity = 0;
         }
 
-        // ВАЖНО: Обновляем частицы только если изменились дни до дедлайна
+        // Обновляем частицы только если изменились дни до дедлайна
         if (days != lastDaysUntilDeadline) {
-            lastDaysUntilDeadline = days;
+            lastDaysUntilDeadline = days; // Сохраняем новое значение
             if (targetIntensity > 0) {
-                startParticles(targetIntensity);
+                startParticles(targetIntensity); // Запускаем частицы
             } else {
                 stopParticles();
             }
@@ -262,38 +276,44 @@ void TaskCard::updateCardColor() {
         stopParticles();
     }
 
+    // Применение стилей CSS ко всей карточке и ее элементам
     setStyleSheet(QString("TaskCard { "
                           "background: %1; "
-                          "color: %2; "
+                          "color: %2; " // Цвет текста
                           "border: 2px solid %3; "
-                          "border-radius: 12px; "
+                          "border-radius: 12px; " // Скругленные углы
                           "} "
                           "QLabel { "
-                          "background: transparent; "
+                          "background: transparent; " // Прозрачный фон у меток
                           "}")
                       .arg(bgColor, textColor, borderColor));
 }
 
+// Запуск анимации свечения с параметрами в зависимости от срочности
 void TaskCard::startGlowAnimation(int daysUntilDeadline) {
     if (glowAnimation->state() == QAbstractAnimation::Running) {
         return;
     }
 
+    // Просроченные задачи: медленное пульсирующее свечение
     if (daysUntilDeadline < 0) {
-        glowAnimation->setDuration(2000);
-        glowAnimation->setKeyValueAt(0, 0.3);
-        glowAnimation->setKeyValueAt(0.5, 1.0);
-        glowAnimation->setKeyValueAt(1, 0.3);
+        glowAnimation->setDuration(2000); // 2 секунды на цикл
+        glowAnimation->setKeyValueAt(0, 0.3); // Начальная интенсивность: 30%
+        glowAnimation->setKeyValueAt(0.5, 1.0); // Пик: 100%
+        glowAnimation->setKeyValueAt(1, 0.3); // Конец: 30%
+    // Дедлайн сегодня: быстрое пульсирование    
     } else if (daysUntilDeadline == 0) {
         glowAnimation->setDuration(800);
         glowAnimation->setKeyValueAt(0, 0.5);
         glowAnimation->setKeyValueAt(0.5, 1.0);
         glowAnimation->setKeyValueAt(1, 0.5);
+     // Дедлайн завтра: средняя скорость    
     } else if (daysUntilDeadline == 1) {
         glowAnimation->setDuration(1200);
         glowAnimation->setKeyValueAt(0, 0.2);
         glowAnimation->setKeyValueAt(0.5, 0.8);
         glowAnimation->setKeyValueAt(1, 0.2);
+    // Дедлайн через 2-3 дня: плавное появление/исчезновение    
     } else {
         glowAnimation->setDuration(1500);
         glowAnimation->setKeyValueAt(0, 0.0);
@@ -311,6 +331,7 @@ void TaskCard::stopGlowAnimation() {
     }
 }
 
+// Запуск эффекта частиц с заданной интенсивностью
 void TaskCard::startParticles(int intensity) {
     if (particleIntensity == intensity && particleTimer->isActive()) {
         return;
@@ -331,7 +352,7 @@ void TaskCard::stopParticles() {
     particleIntensity = 0;
     particleTimer->stop();
     particles.clear();
-    update();
+    update(); // Перерисовка виджета
 }
 
 void TaskCard::generateParticles() {
@@ -339,9 +360,9 @@ void TaskCard::generateParticles() {
 
     int count = particleIntensity * 40;
 
-    // ВАЖНО: Ограничиваем область генерации нижними 30% карточки
+    // Ограничиваем область генерации нижними 30% карточки
     qreal particleAreaHeight = height() * 0.3;
-    qreal particleAreaTop = height() - particleAreaHeight;
+    qreal particleAreaTop = height() - particleAreaHeight; // Начало области
 
     for (int i = 0; i < count; i++) {
         Particle p;
@@ -351,14 +372,16 @@ void TaskCard::generateParticles() {
         bool validPosition = false;
         int attempts = 0;
 
-        while (!validPosition && attempts < 10) {
+        while (!validPosition && attempts < 10) { // Пытаемся найти валидную позицию
             position = QPointF(
-                QRandomGenerator::global()->generateDouble() * width(),
-                particleAreaTop + QRandomGenerator::global()->generateDouble() * particleAreaHeight
+                QRandomGenerator::global()->generateDouble() * width(), // Случайный X
+                particleAreaTop + QRandomGenerator::global()->generateDouble() * particleAreaHeight // Случайный Y
                 );
 
             // Проверяем, не попадает ли частица в скругленные углы
             qreal cornerRadius = 12.0;
+
+            // Расстояние от частицы до каждого угла
             qreal distToTopLeft = QLineF(position, QPointF(0, 0)).length();
             qreal distToTopRight = QLineF(position, QPointF(width(), 0)).length();
             qreal distToBottomLeft = QLineF(position, QPointF(0, height())).length();
@@ -378,14 +401,16 @@ void TaskCard::generateParticles() {
 
         if (!validPosition) continue; // Пропускаем эту частицу
 
+        // Установка параметров частицы
         p.position = position;
-        p.opacity = 0.4 + QRandomGenerator::global()->generateDouble() * 0.6;
+        p.opacity = 0.4 + QRandomGenerator::global()->generateDouble() * 0.6; // Прозрачность
         p.size = 3.0 + QRandomGenerator::global()->generateDouble() * 4.0;
         p.velocity = 0.3 + QRandomGenerator::global()->generateDouble() * 1.2;
 
+        // Настройка цвета частиц в зависимости от интенсивности
         if (particleIntensity == 4) {
             p.color = QColor(
-                QRandomGenerator::global()->bounded(80, 120),
+                QRandomGenerator::global()->bounded(80, 120), 
                 QRandomGenerator::global()->bounded(20, 40),
                 QRandomGenerator::global()->bounded(10, 25)
                 );
@@ -400,16 +425,18 @@ void TaskCard::generateParticles() {
             p.color = QColor(255, QRandomGenerator::global()->bounded(120, 220), QRandomGenerator::global()->bounded(20, 60));
         }
 
-        particles.append(p);
+        particles.append(p); // Добавление частицы в массив
     }
 }
 
+// Обновление анимации части
 void TaskCard::updateParticles() {
     for (Particle& p : particles) {
         p.position.setY(p.position.y() - p.velocity);
         p.position.setX(p.position.x() + (QRandomGenerator::global()->generateDouble() - 0.5) * 0.5);
-        p.opacity -= 0.015;
+        p.opacity -= 0.015; // Постепенное исчезновение
 
+        // Если частица вышла за пределы видимости или исчезла - регенерируем ее
         if (p.position.y() < -10 || p.opacity <= 0 || p.position.x() < 0 || p.position.x() > width()) {
             // Регенерируем частицу в безопасной зоне (не в углах)
             qreal x = QRandomGenerator::global()->generateDouble() * width();
@@ -422,50 +449,55 @@ void TaskCard::updateParticles() {
                 x = width() - cornerRadius - 5;
             }
 
-            p.position = QPointF(x, height() + 5);
+            p.position = QPointF(x, height() + 5); // Сразу под карточкой
             p.opacity = 0.6 + QRandomGenerator::global()->generateDouble() * 0.4;
             p.velocity = 0.3 + QRandomGenerator::global()->generateDouble() * 1.2;
         }
     }
 
-    update();
+    update(); // Перерисовка виджета
 }
 
+// Метод отрисовки виджета
 void TaskCard::paintEvent(QPaintEvent* event) {
     QWidget::paintEvent(event);
 
     if (particles.isEmpty()) return;
 
     QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setRenderHint(QPainter::Antialiasing); // Сглаживание для плавных краев
 
     // Обрезаем рисование по скругленным углам карточки
     QPainterPath path;
-    path.addRoundedRect(rect(), 12, 12);
-    painter.setClipPath(path);
+    path.addRoundedRect(rect(), 12, 12); // Прямоугольник со скруглением 12px
+    painter.setClipPath(path); // Установка области отсечения
 
+    // Рисование каждой частицы
     for (const Particle& p : particles) {
         QColor color = p.color;
         color.setAlphaF(p.opacity);
 
-        QRadialGradient gradient(p.position, p.size * 1.5);
-        gradient.setColorAt(0, color);
+        // Создание радиального градиента для эффекта размытости
+        QRadialGradient gradient(p.position, p.size * 1.5); // Центр и радиус градиента
+        gradient.setColorAt(0, color); // Центр - полный цвет
         QColor fadeColor = color;
         fadeColor.setAlphaF(p.opacity * 0.3);
-        gradient.setColorAt(0.6, fadeColor);
+        gradient.setColorAt(0.6, fadeColor); // Средняя часть - полупрозрачная
         fadeColor.setAlphaF(0);
         gradient.setColorAt(1, fadeColor);
 
-        painter.setBrush(gradient);
-        painter.setPen(Qt::NoPen);
+        painter.setBrush(gradient); // Установка градиента как кисти
+        painter.setPen(Qt::NoPen); // Без контура
         painter.drawEllipse(p.position, p.size * 1.5, p.size * 1.5);
     }
 }
 
+// Получение текста для кнопки статуса
 QString TaskCard::getStatusButtonText() const {
     if (!task) return "";
 
-    switch (task->getStatus()) {
+    // Преобразование статуса задачи в текст кнопки
+    switch (task->getStatus()) { 
     case TaskStatus::Backlog:
         return "→ Назначить";
     case TaskStatus::Assigned:
@@ -481,11 +513,13 @@ QString TaskCard::getStatusButtonText() const {
     }
 }
 
+// Получение имени разработчика для отображения
 QString TaskCard::getDeveloperName() const {
     if (!task || !board || !task->isAssigned()) {
         return "Не назначена";
     }
 
+    // Получение объекта разработчика по ID из доски
     Developer* dev = board->getDeveloper(task->getAssignedDeveloperId());
     if (dev) {
         return dev->getName();
@@ -494,6 +528,7 @@ QString TaskCard::getDeveloperName() const {
     return QString("ID: %1").arg(task->getAssignedDeveloperId());
 }
 
+// Обработка нажатия кнопки мыши
 void TaskCard::mousePressEvent(QMouseEvent* event) {
     if (event->button() == Qt::LeftButton) {
         dragStartPosition = event->pos();
@@ -501,25 +536,30 @@ void TaskCard::mousePressEvent(QMouseEvent* event) {
     QWidget::mousePressEvent(event);
 }
 
+// Обработка движения мыши
 void TaskCard::mouseMoveEvent(QMouseEvent* event) {
     if (!(event->buttons() & Qt::LeftButton)) {
         return;
     }
 
+    // Проверяем, достаточно ли мышь переместилась для начала перетаскивания
     if ((event->pos() - dragStartPosition).manhattanLength() < QApplication::startDragDistance()) {
         return;
     }
 
+    // Создание объекта перетаскивания
     QDrag* drag = new QDrag(this);
     QMimeData* mimeData = new QMimeData;
 
+    // В качестве данных передаем ID задачи
     mimeData->setText(QString::number(task->getId()));
     drag->setMimeData(mimeData);
 
+    // Создание миниатюры карточки для перетаскивания
     QPixmap pixmap(size());
-    render(&pixmap);
-    drag->setPixmap(pixmap);
-    drag->setHotSpot(event->pos());
+    render(&pixmap); // Отрисовка карточки в пиксмап
+    drag->setPixmap(pixmap); // Установка миниатюры
+    drag->setHotSpot(event->pos()); // Точка захвата
 
     drag->exec(Qt::MoveAction);
 }
