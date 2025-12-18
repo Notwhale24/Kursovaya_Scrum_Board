@@ -1,5 +1,5 @@
 #include "board.h"
-#include <QFile> // Для работы с файлами (сохранение/загрузка)
+#include <QFile> // Для работы с файлами
 #include <QJsonArray> // Для работы с JSON массивами
 #include <QJsonDocument> // Для работы с JSON документами
  
